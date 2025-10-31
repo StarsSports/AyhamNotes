@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AyhamPlay</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #121212;
+      color: #fff;
+    }
+
+    header {
+      background: #4fc3f7;
+      padding: 15px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      background: #1f1f1f;
+      padding: 10px;
+    }
+
+    nav button {
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    section {
+      display: none;
+      padding: 20px;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    .game-card {
+      background: #2c2c2c;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+    }
+
+    .tool {
+      background: #4fc3f7;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: grab;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    #creator-canvas {
+      background: #222;
+      height: 300px;
+      position: relative;
+      border: 2px dashed #555;
+    }
+
+    .block {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: #ff9800;
+      border-radius: 4px;
+      cursor: move;
+    }
+
+    input, button {
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .form-group button {
+      background: #4caf50;
+      color: white;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #preview-area {
+      margin-top: 20px;
+      background: #333;
+      padding: 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>AyhamPlay</header>
+
+  <nav>
+    <button onclick="showSection('home')">🏠 Home</button>
+    <button onclick="showSection('creator')">🎮 Create</button>
+    <button onclick="showSection('signup')">🔐 Sign Up</button>
+    <button onclick="showSection('login')">🔓 Login</button>
+  </nav>
+
+  <section id="home" class="active">
+    <h2>Published Games</h2>
+    <div id="game-list"></div>
+  </section>
+
+  <section id="creator">
+    <h2>Game Creator</h2>
+    <input type="text" id="game-title" placeholder="Game Title" style="width:100%; padding:8px; margin-bottom:10px;">
+    <div class="tool" draggable="true" ondragstart="startDrag(event)">Block</div>
+    <div id="creator-canvas" ondragover="allowDrop(event)" ondrop="dropBlock(event)"></div>
+    <button onclick="previewGame()">👁️ Preview</button>
+    <button onclick="saveGame()">💾 Save</button>
+    <button onclick="publishGame()">📤 Publish</button>
+    <div id="preview-area"></div>
+  </section>
+
+  <section id="signup">
+    <h2>Sign Up</h2>
+    <div class="form-group">
+      <input type="text" id="signup-username" placeholder="Username">
+    </div>
+    <div class="form-group">
+      <input type="password" id="signup-password" placeholder="Password">
+    </div>
+    <div class="form-group">
+      <button onclick="signUp()">Create Account</button>
+    </div>
+    <p id="signup-msg"></p>
+  </section>
+
+  <section id="login">
+    <h2>Login</h2>
+    <div class="form-group">
+      <input type="text" id="login-username" placeholder="Username">
+    </div>
+    <div class="form-group">
+      <input type="password" id="login-password" placeholder="Password">
+    </div>
+    <div class="form-group">
+      <button onclick="login()">Login</button>
+    </div>
+    <p id="login-msg"></p>
+  </section>
+
+  <script>
+    function showSection(id) {
+      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === "home") loadPublishedGames();
+    }
+
+    function startDrag(e) {
+      e.dataTransfer.setData("text/plain", "block");
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+    }
+
+    function dropBlock(e) {
+      e.preventDefault();
+      const block = document.createElement("div");
+      block.className = "block";
+      block.style.left = `${e.clientX - 25}px`;
+      block.style.top = `${e.clientY - 25}px`;
+      block.setAttribute("draggable", "true");
+      block.addEventListener("dragstart", startBlockDrag);
+      document.getElementById("creator-canvas").appendChild(block);
+    }
+
+    function startBlockDrag(e) {
+      const block = e.target;
+      const offsetX = e.clientX - block.offsetLeft;
+      const offsetY = e.clientY - block.offsetTop;
+
+      function moveBlock(ev) {
+        block.style.left = `${ev.clientX - offsetX}px`;
+        block.style.top = `${ev.clientY - offsetY}px`;
+      }
+
+      function stopDrag() {
+        document.removeEventListener("mousemove", moveBlock);
+        document.removeEventListener("mouseup", stopDrag);
+      }
+
+      document.addEventListener("mousemove", moveBlock);
+      document.addEventListener("mouseup", stopDrag);
+    }
+
+    function previewGame() {
+      const blocks = document.querySelectorAll("#creator-canvas .block");
+      const preview = document.getElementById("preview-area");
+      preview.innerHTML = "<h3>Preview</h3>";
+      blocks.forEach(block => {
+        const clone = block.cloneNode();
+        clone.style.position = "relative";
+        preview.appendChild(clone);
+      });
+    }
+
+    function saveGame() {
+      const title = document.getElementById("game-title").value.trim();
+      if (!title) return alert("Enter a game title first.");
+      const blocks = Array.from(document.querySelectorAll("#creator-canvas .block")).map(b => ({
+        x: b.offsetLeft,
+        y: b.offsetTop
+      }));
+      localStorage.setItem("ayham_game_" + title, JSON.stringify(blocks));
+      alert("Game saved!");
+    }
+
+    function publishGame() {
+      const title = document.getElementById("game-title").value.trim();
+      if (!title) return alert("Enter a game title first.");
+      let published = JSON.parse(localStorage.getItem("ayham_published") || "[]");
+      if (!published.includes(title)) published.push(title);
+      localStorage.setItem("ayham_published", JSON.stringify(published));
+      alert("Game published to homepage!");
+    }
+
+    function loadPublishedGames() {
+      const list = document.getElementById("game-list");
+      list.innerHTML = "";
+      const published = JSON.parse(localStorage.getItem("ayham_published") || "[]");
+      published.forEach(title => {
+        const card = document.createElement("div");
+        card.className = "game-card";
+        card.innerHTML = `<h3>${title}</h3><p>Created by you</p>`;
+        list.appendChild(card);
+      });
+    }
+
+    function signUp() {
+      const user = document.getElementById("signup-username").value.trim();
+      const pass = document.getElementById("signup-password").value.trim();
+      const msg = document.getElementById("signup-msg");
+      if (!user || !pass) return msg.textContent = "Please enter both fields.";
+      localStorage.setItem("ayham_user", JSON.stringify({ user, pass }));
+      msg.textContent = `Welcome, ${ [9F742443-6C92-4C44-BF58-8F5A7C53B6F1](https://github.com/Ronnie434/30-days-of-React/tree/22142106cb46f717a1259f84227cc90ed7fe50cc/02_Day_Introduction_to_React%2F02_introduction_to_react.md?citationMarker=9F742443-6C92-4C44-BF58-8F5A7C53B6F1&citationId=688D5570-951C-4216-8126-6418572B11E6&citationTitle=github.com&citationFullTitle=github.com&chatItemId=VQBj3GoHfr2dKJdFvit2i)
