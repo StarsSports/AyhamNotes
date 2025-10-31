@@ -3,269 +3,216 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AyhamPlay</title>
+  <title>Ayham Notes</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background: #121212;
       color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
 
     header {
-      background: #4fc3f7;
+      background: #ff9800;
+      color: #000;
       padding: 15px;
       text-align: center;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: bold;
-      color: #000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
 
-    nav {
+    #controls {
       display: flex;
-      justify-content: center;
-      gap: 20px;
-      background: #1f1f1f;
+      flex-wrap: wrap;
+      gap: 10px;
       padding: 10px;
+      background: #1f1f1f;
     }
 
-    nav button {
-      background: #333;
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    section {
-      display: none;
-      padding: 20px;
-    }
-
-    section.active {
-      display: block;
-    }
-
-    .game-card {
-      background: #2c2c2c;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-    }
-
-    .tool {
-      background: #4fc3f7;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: grab;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    #creator-canvas {
-      background: #222;
-      height: 300px;
-      position: relative;
-      border: 2px dashed #555;
-    }
-
-    .block {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      background: #ff9800;
-      border-radius: 4px;
-      cursor: move;
-    }
-
-    input, button {
-      font-family: inherit;
-      font-size: 14px;
-    }
-
-    .form-group {
-      margin-bottom: 10px;
-    }
-
-    .form-group input {
-      width: 100%;
+    #controls input, #controls button {
       padding: 8px;
       border: none;
       border-radius: 4px;
+      font-size: 14px;
     }
 
-    .form-group button {
-      background: #4caf50;
-      color: white;
+    #controls input {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #note-list {
+      width: 250px;
+      background: #1a1a1a;
       padding: 10px;
-      width: 100%;
-      border: none;
+      overflow-y: auto;
+      border-right: 1px solid #333;
+    }
+
+    .note-item {
+      background: #2c2c2c;
+      padding: 10px;
+      margin-bottom: 5px;
       border-radius: 4px;
-      font-weight: bold;
       cursor: pointer;
     }
 
-    #preview-area {
-      margin-top: 20px;
-      background: #333;
+    .note-item:hover {
+      background: #3a3a3a;
+    }
+
+    #editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #note-title {
       padding: 10px;
-      border-radius: 6px;
+      font-size: 16px;
+      background: #1f1f1f;
+      border: none;
+      color: #fff;
+    }
+
+    #note-content {
+      flex: 1;
+      padding: 20px;
+      font-size: 16px;
+      background: #1f1f1f;
+      color: #fff;
+      border: none;
+      resize: none;
+      outline: none;
+    }
+
+    footer {
+      background: #1f1f1f;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    @media (max-width: 600px) {
+      #main {
+        flex-direction: column;
+      }
+
+      #note-list {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #333;
+      }
     }
   </style>
 </head>
 <body>
 
-  <header>AyhamPlay</header>
+  <header>Ayham Notes</header>
 
-  <nav>
-    <button onclick="showSection('home')">🏠 Home</button>
-    <button onclick="showSection('creator')">🎮 Create</button>
-    <button onclick="showSection('signup')">🔐 Sign Up</button>
-    <button onclick="showSection('login')">🔓 Login</button>
-  </nav>
+  <div id="controls">
+    <input type="text" id="new-note-name" placeholder="New note name">
+    <button onclick="createNote()">➕ Create</button>
+    <button onclick="deleteNote()">🗑️ Delete</button>
+    <button onclick="exportNote()">📤 Export</button>
+    <input type="text" id="search" placeholder="Search notes..." oninput="searchNotes()">
+  </div>
 
-  <section id="home" class="active">
-    <h2>Published Games</h2>
-    <div id="game-list"></div>
-  </section>
+  <div id="main">
+    <div id="note-list"></div>
 
-  <section id="creator">
-    <h2>Game Creator</h2>
-    <input type="text" id="game-title" placeholder="Game Title" style="width:100%; padding:8px; margin-bottom:10px;">
-    <div class="tool" draggable="true" ondragstart="startDrag(event)">Block</div>
-    <div id="creator-canvas" ondragover="allowDrop(event)" ondrop="dropBlock(event)"></div>
-    <button onclick="previewGame()">👁️ Preview</button>
-    <button onclick="saveGame()">💾 Save</button>
-    <button onclick="publishGame()">📤 Publish</button>
-    <div id="preview-area"></div>
-  </section>
+    <div id="editor">
+      <input type="text" id="note-title" placeholder="Note title" disabled>
+      <textarea id="note-content" placeholder="Start typing..."></textarea>
+    </div>
+  </div>
 
-  <section id="signup">
-    <h2>Sign Up</h2>
-    <div class="form-group">
-      <input type="text" id="signup-username" placeholder="Username">
-    </div>
-    <div class="form-group">
-      <input type="password" id="signup-password" placeholder="Password">
-    </div>
-    <div class="form-group">
-      <button onclick="signUp()">Create Account</button>
-    </div>
-    <p id="signup-msg"></p>
-  </section>
-
-  <section id="login">
-    <h2>Login</h2>
-    <div class="form-group">
-      <input type="text" id="login-username" placeholder="Username">
-    </div>
-    <div class="form-group">
-      <input type="password" id="login-password" placeholder="Password">
-    </div>
-    <div class="form-group">
-      <button onclick="login()">Login</button>
-    </div>
-    <p id="login-msg"></p>
-  </section>
+  <footer>Notes are saved automatically ✨</footer>
 
   <script>
-    function showSection(id) {
-      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      if (id === "home") loadPublishedGames();
-    }
+    let currentNote = null;
 
-    function startDrag(e) {
-      e.dataTransfer.setData("text/plain", "block");
-    }
-
-    function allowDrop(e) {
-      e.preventDefault();
-    }
-
-    function dropBlock(e) {
-      e.preventDefault();
-      const block = document.createElement("div");
-      block.className = "block";
-      block.style.left = `${e.clientX - 25}px`;
-      block.style.top = `${e.clientY - 25}px`;
-      block.setAttribute("draggable", "true");
-      block.addEventListener("dragstart", startBlockDrag);
-      document.getElementById("creator-canvas").appendChild(block);
-    }
-
-    function startBlockDrag(e) {
-      const block = e.target;
-      const offsetX = e.clientX - block.offsetLeft;
-      const offsetY = e.clientY - block.offsetTop;
-
-      function moveBlock(ev) {
-        block.style.left = `${ev.clientX - offsetX}px`;
-        block.style.top = `${ev.clientY - offsetY}px`;
-      }
-
-      function stopDrag() {
-        document.removeEventListener("mousemove", moveBlock);
-        document.removeEventListener("mouseup", stopDrag);
-      }
-
-      document.addEventListener("mousemove", moveBlock);
-      document.addEventListener("mouseup", stopDrag);
-    }
-
-    function previewGame() {
-      const blocks = document.querySelectorAll("#creator-canvas .block");
-      const preview = document.getElementById("preview-area");
-      preview.innerHTML = "<h3>Preview</h3>";
-      blocks.forEach(block => {
-        const clone = block.cloneNode();
-        clone.style.position = "relative";
-        preview.appendChild(clone);
-      });
-    }
-
-    function saveGame() {
-      const title = document.getElementById("game-title").value.trim();
-      if (!title) return alert("Enter a game title first.");
-      const blocks = Array.from(document.querySelectorAll("#creator-canvas .block")).map(b => ({
-        x: b.offsetLeft,
-        y: b.offsetTop
-      }));
-      localStorage.setItem("ayham_game_" + title, JSON.stringify(blocks));
-      alert("Game saved!");
-    }
-
-    function publishGame() {
-      const title = document.getElementById("game-title").value.trim();
-      if (!title) return alert("Enter a game title first.");
-      let published = JSON.parse(localStorage.getItem("ayham_published") || "[]");
-      if (!published.includes(title)) published.push(title);
-      localStorage.setItem("ayham_published", JSON.stringify(published));
-      alert("Game published to homepage!");
-    }
-
-    function loadPublishedGames() {
-      const list = document.getElementById("game-list");
+    function loadNotes() {
+      const list = document.getElementById("note-list");
       list.innerHTML = "";
-      const published = JSON.parse(localStorage.getItem("ayham_published") || "[]");
-      published.forEach(title => {
-        const card = document.createElement("div");
-        card.className = "game-card";
-        card.innerHTML = `<h3>${title}</h3><p>Created by you</p>`;
-        list.appendChild(card);
+      const keys = Object.keys(localStorage).filter(k => k.startsWith("note_"));
+      keys.forEach(key => {
+        const name = key.replace("note_", "");
+        const div = document.createElement("div");
+        div.className = "note-item";
+        div.textContent = name;
+        div.onclick = () => loadNote(name);
+        list.appendChild(div);
       });
     }
 
-    function signUp() {
-      const user = document.getElementById("signup-username").value.trim();
-      const pass = document.getElementById("signup-password").value.trim();
-      const msg = document.getElementById("signup-msg");
-      if (!user || !pass) return msg.textContent = "Please enter both fields.";
-      localStorage.setItem("ayham_user", JSON.stringify({ user, pass }));
-      msg.textContent = `Welcome, ${user}! Account created.`;
+    function createNote() {
+      const name = document.getElementById("new-note-name").value.trim();
+      if (!name) return alert("Enter a note name.");
+      localStorage.setItem("note_" + name, "");
+      loadNotes();
+      loadNote(name);
+      document.getElementById("new-note-name").value = "";
     }
 
-    function login() {
-      const [9F742443-6C92-4C44-BF58-8F5A7C53B6F1](https://github.com/lzh-yi/Web-Fork-/tree/024b3e55587afdf9f05a677613a75f24e3d1803e/03-CSS%E8%BF%9B%E9%98%B6%2F04-%E5%A6%82%E4%BD%95%E8%AE%A9%E4%B8%80%E4%B8%AA%E5%85%83%E7%B4%A0%E6%B0%B4%E5%B9%B3%E5%9E%82%E7%9B%B4%E5%B1%85%E4%B8%AD%EF%BC%9F.md?citationMarker=9F742443-6C92-4C44-BF58-8F5A7C53B6F1&citationId=EA5063B3-671F-4744-ABE2-E3356C2535F0,258480C5-0BA0-470D-BADE-0E4D29F209DD&citationTitle=github.com%20+1&citationFullTitle=github.com%20+1&chatItemId=cPMUyQWshbTeCFhKbdGUw)
+    function loadNote(name) {
+      currentNote = name;
+      document.getElementById("note-title").value = name;
+      document.getElementById("note-content").value = localStorage.getItem("note_" + name) || "";
+    }
+
+    function deleteNote() {
+      if (!currentNote) return alert("No note selected.");
+      if (confirm("Delete this note?")) {
+        localStorage.removeItem("note_" + currentNote);
+        currentNote = null;
+        document.getElementById("note-title").value = "";
+        document.getElementById("note-content").value = "";
+        loadNotes();
+      }
+    }
+
+    function exportNote() {
+      if (!currentNote) return alert("No note selected.");
+      const content = document.getElementById("note-content").value;
+      const blob = new Blob([content], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = currentNote + ".txt";
+      link.click();
+    }
+
+    function searchNotes() {
+      const query = document.getElementById("search").value.toLowerCase();
+      const items = document.querySelectorAll(".note-item");
+      items.forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(query) ? "block" : "none";
+      });
+    }
+
+    document.getElementById("note-content").addEventListener("input", () => {
+      if (currentNote) {
+        localStorage.setItem("note_" + currentNote, document.getElementById("note-content").value);
+      }
+    });
+
+    loadNotes();
+  </script>
+
+</body>
+</html>
